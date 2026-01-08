@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import { Playfair_Display, Inter } from "next/font/google";
+import { Outfit, Inter } from "next/font/google"; // Switch to Outfit for futuristic feel
 import "./globals.css";
 
-const playfair = Playfair_Display({
-  variable: "--font-playfair",
+const outfit = Outfit({
+  variable: "--font-outfit",
   subsets: ["latin"],
 });
 
@@ -13,7 +13,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "ReportAway - Premium Traffic Defense",
+  title: "ReportAway - AI Traffic Defense",
   description: "Advanced AI-powered traffic ticket assessment.",
 };
 
@@ -25,7 +25,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${playfair.variable} ${inter.variable} font-sans antialiased`}
+        className={`${outfit.variable} ${inter.variable} font-sans antialiased bg-background text-foreground`}
       >
         {children}
       </body>

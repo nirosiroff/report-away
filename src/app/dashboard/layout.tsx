@@ -15,7 +15,7 @@ export default async function DashboardLayout({
   } : null;
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex min-h-screen">
       {/* Desktop Sidebar */}
       <div className="hidden md:flex w-72 flex-col fixed inset-y-0 z-50">
         <Sidebar user={user} />
@@ -29,7 +29,7 @@ export default async function DashboardLayout({
              <span className="ml-4 font-serif font-bold text-lg">ReportAway</span>
         </header>
         
-        <main className="flex-1 p-6 md:p-10 bg-muted/20">
+        <main className="flex-1 p-6 md:p-10">
           {children}
         </main>
       </div>
