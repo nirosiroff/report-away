@@ -2,11 +2,11 @@
 
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 import connectDB from "@/lib/db";
-import Ticket from "@/models/Ticket";
+import Case from "@/models/Case";
 import { revalidatePath } from "next/cache";
-import { analyzeTicket } from "@/lib/ai/analysis";
+import { analyzeCase } from "@/lib/ai/analysis";
 
-export async function startAnalysis(ticketId: string) {
+export async function startAnalysis(caseId: string) {
     const { getUser } = getKindeServerSession();
     const user = await getUser();
 
@@ -15,21 +15,16 @@ export async function startAnalysis(ticketId: string) {
     }
 
     await connectDB();
-    const ticket = await Ticket.findById(ticketId);
+    const caseData = await Case.findById(caseId);
     
-    if (!ticket) {
-        throw new Error("Ticket not found");
+    if (!caseData) {
+        throw new Error("Case not found");
     }
 
     // Trigger analysis
-    // We await it here to ensure at least the initial status update happens, 
-    // but the actual AI call inside is also awaited. 
-    // If it takes too long for Vercel (max 10s on hobby), might need background job.
-    // For now, we assume it fits or client handles loading state.
-    
     try {
-        await analyzeTicket(ticketId);
-        revalidatePath(`/dashboard/cases/${ticket.caseId}`);
+        await analyzeCase(caseId);
+        revalidatePath(`/dashboard/cases/${caseId}`);
         return { success: true };
     } catch (error) {
         console.error("Analysis invocation failed:", error);

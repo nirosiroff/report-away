@@ -61,7 +61,7 @@ export default async function CasePage({ params }: { params: Promise<{ id: strin
                     <TicketList caseId={caseData._id.toString()} tickets={tickets} />
                 </TabsContent>
                 <TabsContent value="analysis" className="flex-1 overflow-auto mt-4 border rounded-lg p-4 bg-white/50 dark:bg-slate-900/50">
-                     <CaseAnalysis caseId={caseData._id.toString()} ticket={tickets[0]} />
+                     <CaseAnalysis caseData={JSON.parse(JSON.stringify(caseData))} />
                 </TabsContent>
             </Tabs>
         </div>

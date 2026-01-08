@@ -1,81 +1,162 @@
 import OpenAI from 'openai';
 import Ticket from "@/models/Ticket";
+import Case from "@/models/Case";
+import fs from 'fs';
+import path from 'path';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-export async function analyzeTicket(ticketId: string) {
-  const ticket = await Ticket.findById(ticketId);
-  if (!ticket) throw new Error("Ticket not found");
 
-  // In a real app, we would read the file buffer or use the URL if accessible by OpenAI
-  // Since we are using local uploads, OpenAI can't reach 'http://localhost:3000/uploads/...'
-  // We need to pass base64 or text. 
-  // For this prototype, we'll assume the 'fileUrl' is not reachable, so we should skip actual vision if we can't send the file easy.
-  // BUT, to demonstrate extracted value, we can mock it OR if the file is small, read it and send as base64.
-  
-  // Reading file from disk
-  // const fs = require('fs');
-  // const path = require('path');
-  // const filePath = path.join(process.cwd(), 'public', ticket.fileUrl);
-  // const fileBuffer = fs.readFileSync(filePath);
-  // const base64Image = fileBuffer.toString('base64');
-  
-  // Let's implement the base64 approach for a robust demo if possible, 
-  // but for reliability in this environment, I'll use a mocked response if API key is missing, 
-  // or a simple text prompt if no image is passed.
-  
-  // ACTUALLY, I will generate a generic analysis because I cannot guarantee the environment has the file readable or API key valid.
-  // However, I will write the code to use OpenAI if key is present.
 
-  ticket.status = 'Analyzing';
-  if (!ticket.analysisLog) ticket.analysisLog = [];
-  ticket.analysisLog.push(`[${new Date().toLocaleTimeString()}] Analysis started.`);
-  await ticket.save();
-
-  if (!process.env.OPENAI_API_KEY) {
-      console.warn("Missing OPENAI_API_KEY, skipping AI analysis.");
-      if (!ticket.analysisLog) ticket.analysisLog = [];
-      ticket.analysisLog.push(`[${new Date().toLocaleTimeString()}] Error: Missing API Key.`);
-      ticket.status = 'Failed';
-      await ticket.save();
-      return;
+export async function analyzeCase(caseId: string) {
+  console.log(`[Analysis] Starting analysis for Case ID: ${caseId}`);
+  const caseData = await Case.findById(caseId);
+  if (!caseData) {
+      console.error(`[Analysis] Case not found: ${caseId}`);
+      throw new Error("Case not found");
   }
 
-  try {
-      if (!ticket.analysisLog) ticket.analysisLog = [];
-      ticket.analysisLog.push(`[${new Date().toLocaleTimeString()}] Sending data to AI...`);
-      await ticket.save();
+  // Step 0: Initialize
+  console.log(`[Analysis] Initializing case status...`);
+  caseData.status = 'Analysis In Progress';
+  caseData.analysisLog = [];
+  caseData.analysisLog.push(`[${new Date().toLocaleTimeString()}] Analysis started.`);
+  await caseData.save();
 
-      // Mocking the analysis for now to ensure stability without complex file reading in this limited context
-      // In production: Send Image to GPT-4o
+  try {
+      // Step 1: Read all uploaded documents
+      console.log(`[Analysis] Step 1: Reading documents...`);
+      if (!caseData.analysisLog) caseData.analysisLog = [];
+      caseData.analysisLog.push(`[${new Date().toLocaleTimeString()}] Reading uploaded documents...`);
+      await caseData.save();
       
-      const response = await openai.chat.completions.create({
+      const tickets = await Ticket.find({ caseId });
+      console.log(`[Analysis] Found ${tickets.length} tickets for case.`);
+      if (tickets.length === 0) {
+           console.warn(`[Analysis] No tickets found.`);
+           throw new Error("No tickets found to analyze.");
+      }
+
+      // Step 2: Use LLM to extract all details
+      console.log(`[Analysis] Step 2: Extracting details...`);
+      caseData.analysisLog.push(`[${new Date().toLocaleTimeString()}] Extracting details from ${tickets.length} file(s)...`);
+      await caseData.save();
+
+      // Check for API Key
+      if (!process.env.OPENAI_API_KEY) {
+          throw new Error("OPENAI_API_KEY is not configured.");
+      }
+
+      // Prepare images/files for Vision API
+      const contentParts: any[] = [
+          { type: "text", text: "Analyze these traffic ticket images. Extract the following details into a JSON object: citationDate, violationCode, location, fineAmount, officerNotes, court." }
+      ];
+
+      for (const t of tickets) {
+          const isImage = /\.(jpeg|jpg|png|webp|gif|bmp|tiff)$/i.test(t.fileUrl);
+          // If regex fails but it's not a PDF, we might assume image, but let's stick to regex to be safe.
+          
+          if (isImage) {
+              let imageUrl = t.fileUrl;
+
+              // Handle local uploads (relative paths)
+              if (imageUrl.startsWith('/')) {
+                  try {
+                      const filePath = path.join(process.cwd(), 'public', imageUrl);
+                      const fileBuffer = fs.readFileSync(filePath);
+                      const base64Image = fileBuffer.toString('base64');
+                      const mimeType = imageUrl.split('.').pop()?.toLowerCase() === 'png' ? 'image/png' : 'image/jpeg';
+                      imageUrl = `data:${mimeType};base64,${base64Image}`;
+                      console.log(`[Analysis] Converted local file to base64: ${t.fileUrl}`);
+                  } catch (e) {
+                      console.error(`[Analysis] Failed to read local file: ${t.fileUrl}`, e);
+                      // Skip this file or continue with URL (will fail)
+                  }
+              }
+
+              contentParts.push({
+                  type: "image_url",
+                  image_url: {
+                      url: imageUrl,
+                  }
+              });
+          } else {
+             // Fallback for non-images
+             contentParts.push({ type: "text", text: `(Additional document at ${t.fileUrl} - format not supported for direct vision analysis)`});
+          }
+      }
+
+      console.log(`[Analysis] Sending ${contentParts.length} parts to OpenAI (Images: ${contentParts.filter(p => p.type === 'image_url').length})`);
+
+      const extractionResponse = await openai.chat.completions.create({
           model: "gpt-4o",
           messages: [
               {
                   role: "system",
-                  content: "You are an expert traffic lawyer. Analyze the provided traffic ticket information. Extract date, location, violation code, and provide an assessment on how to challenge it."
+                  content: "You are a data extraction assistant. You only output valid JSON."
               },
               {
                   role: "user",
-                  content: `Please analyze this ticket. (Simulated image content).`
+                  content: contentParts
+              }
+          ],
+          response_format: { type: "json_object" }
+      });
+
+      const rawExtraction = extractionResponse.choices[0].message.content;
+      if (!rawExtraction) throw new Error("Failed to extract data from AI response.");
+
+      const extractedData = JSON.parse(rawExtraction);
+
+      // Step 3: Consolidate details
+      console.log(`[Analysis] Step 3: Consolidating details...`);
+      
+      caseData.structuredData = extractedData;
+      console.log(`[Analysis] details consolidated:`, caseData.structuredData);
+      caseData.analysisLog.push(`[${new Date().toLocaleTimeString()}] Details consolidated.`);
+      await caseData.save();
+
+      // Step 4: Analyze details for strategy
+      console.log(`[Analysis] Step 4: Generating strategy...`);
+      caseData.analysisLog.push(`[${new Date().toLocaleTimeString()}] Generating legal strategy...`);
+      await caseData.save();
+      
+      console.log(`[Analysis] Calling OpenAI for strategy...`);
+      // Call OpenAI with consolidated data for specific legal analysis
+      const strategyResponse = await openai.chat.completions.create({
+          model: "gpt-4o",
+          messages: [
+              {
+                  role: "system",
+                  content: "You are an expert traffic lawyer. Provide a detailed, formatted strategy based on the extracted ticket details. Use Markdown."
+              },
+              {
+                  role: "user",
+                  content: `Analyze this traffic ticket data: ${JSON.stringify(caseData.structuredData)}. 
+                  Provide a strategy to fight this ticket, covering:
+                  1. Discovery requests (what to ask for).
+                  2. Specific defenses for the violation code.
+                  3. Assessment of success probability.`
               }
           ]
       });
 
-      const analysisRaw = response.choices[0].message.content;
-      
-      ticket.analysis = analysisRaw || "Analysis failed.";
-      ticket.status = 'Analyzed'; 
-      ticket.analysisLog.push(`[${new Date().toLocaleTimeString()}] Analysis complete.`);
-      await ticket.save();
+      caseData.analysis = strategyResponse.choices[0].message.content || "Analysis failed.";
+      console.log(`[Analysis] OpenAI strategy received.`);
+
+      // Step 5: Finalize
+      console.log(`[Analysis] Step 5: Complete.`);
+      caseData.analysisLog.push(`[${new Date().toLocaleTimeString()}] Analysis complete.`);
+      caseData.status = 'Ready';
+      await caseData.save();
 
   } catch (error) {
-      console.error("OpenAI Analysis failed:", error);
-      ticket.analysisLog.push(`[${new Date().toLocaleTimeString()}] Analysis failed: ${(error as Error).message}`);
-      ticket.status = 'Failed';
-      await ticket.save();
+      console.error("[Analysis] Failed:", error);
+      if (!caseData.analysisLog) caseData.analysisLog = [];
+      caseData.analysisLog.push(`[${new Date().toLocaleTimeString()}] Error: ${(error as Error).message}`);
+      caseData.status = 'Open'; 
+      await caseData.save();
   }
 }

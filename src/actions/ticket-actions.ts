@@ -8,7 +8,6 @@ import { revalidatePath } from "next/cache";
 import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid'; 
-import { analyzeTicket } from "@/lib/ai/analysis";
 import { put } from '@vercel/blob';
 
 export async function uploadTicket(formData: FormData) {

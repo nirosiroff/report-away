@@ -6,6 +6,9 @@ export interface ICase extends Document {
   userId: mongoose.Types.ObjectId;
   title: string;
   status: CaseStatus;
+  analysisLog?: string[];
+  structuredData?: Record<string, any>;
+  analysis?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -19,6 +22,9 @@ const CaseSchema: Schema = new Schema(
       enum: ['Open', 'Analysis In Progress', 'Ready', 'Closed'],
       default: 'Open',
     },
+    analysisLog: { type: [String], default: [] },
+    structuredData: { type: Map, of: Schema.Types.Mixed },
+    analysis: { type: String },
   },
   { timestamps: true }
 );
