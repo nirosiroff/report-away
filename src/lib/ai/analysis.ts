@@ -225,10 +225,35 @@ export async function analyzeCase(caseId: string) {
       caseData.markModified('analysis');
       
       console.log(`[Analysis] Step 5: Complete.`);
-      caseData.analysisLog.push(`[${new Date().toLocaleTimeString()}] Analysis complete.`);
-      caseData.status = 'Ready';
-      await caseData.save();
-      console.log(`[Analysis] Case saved successfully.`);
+      
+      // FORCE UPDATE: Use findByIdAndUpdate to bypass potential Mongoose document tracking issues
+      // This sends a direct $set command to the database
+      const timestamp = new Date().toLocaleTimeString();
+      const updatedCase = await Case.findByIdAndUpdate(
+          caseId,
+          {
+              $set: {
+                  status: 'Ready',
+                  structuredData: extractedData, // Ensure this is the plain object
+                  analysis: caseData.analysis,
+                  // Append to log using $push if we wanted, but here we just replace or add?
+                  // Easier to just push to the array in memory if we were saving, but since we use update:
+              },
+              $push: {
+                  analysisLog: `[${timestamp}] Analysis complete.`
+              }
+          },
+          { new: true, lean: true } // Return updated doc, plain object
+      );
+
+      console.log(`[Analysis] Post-Update Verification:`);
+      console.log(`[Analysis] - Status: ${updatedCase?.status}`);
+      // @ts-ignore
+      console.log(`[Analysis] - Data Keys: ${updatedCase?.structuredData ? Object.keys(updatedCase.structuredData).join(',') : 'None'}`);
+      // @ts-ignore
+      console.log(`[Analysis] - Analysis Len: ${updatedCase?.analysis?.length}`);
+
+      console.log(`[Analysis] Case saved successfully via direct update.`);
 
   } catch (error) {
       console.error("[Analysis] Failed:", error);
