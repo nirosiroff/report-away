@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Outfit, Inter } from "next/font/google"; // Switch to Outfit for futuristic feel
+import { Outfit, Inter } from "next/font/google";
 import "./globals.css";
 
 const outfit = Outfit({
@@ -27,7 +27,7 @@ export default function RootLayout({
       <body
         className={`${outfit.variable} ${inter.variable} font-sans antialiased bg-background text-foreground`}
       >
-        {children}
+          {children}
       </body>
     </html>
   );
