@@ -23,10 +23,21 @@ export function ChatInterface({ caseId, initialHistory = [] }: { caseId: string,
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+     // Immediate scroll on messages change
      if(scrollRef.current) {
-         scrollRef.current.scrollIntoView({ behavior: 'smooth' });
+         scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
      }
-  }, [messages]);
+  }, [messages, isLoading]);
+
+  // Force scroll on mount (for reload)
+  useEffect(() => {
+      const timer = setTimeout(() => {
+          if(scrollRef.current) {
+              scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+          }
+      }, 100);
+      return () => clearTimeout(timer);
+  }, []);
 
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
@@ -58,8 +69,11 @@ export function ChatInterface({ caseId, initialHistory = [] }: { caseId: string,
   };
 
   return (
-    <div className="flex flex-col h-full bg-background/50 backdrop-blur-sm">
-      <ScrollArea className="flex-1 p-4">
+    <div className="flex flex-col h-full min-h-0 bg-background/50 backdrop-blur-sm">
+      <div 
+        ref={scrollRef}
+        className="flex-1 min-h-0 p-4 overflow-y-auto scroll-smooth"
+      >
         <div className="space-y-6">
           {messages.map((m, i) => (
             <div key={i} className={cn("flex gap-3", m.role === 'user' ? 'justify-end' : 'justify-start')}>
@@ -103,9 +117,8 @@ export function ChatInterface({ caseId, initialHistory = [] }: { caseId: string,
                   </div>
               </div>
           )}
-          <div ref={scrollRef} />
         </div>
-      </ScrollArea>
+      </div>
       <div className="p-4 border-t bg-background/80 backdrop-blur p-4">
         <form
           onSubmit={(e) => {

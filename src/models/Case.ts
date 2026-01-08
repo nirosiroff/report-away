@@ -41,6 +41,11 @@ const CaseSchema: Schema = new Schema(
   { timestamps: true }
 );
 
+// Force recompilation if schema changed in dev
+if (process.env.NODE_ENV === 'development' && mongoose.models.Case) {
+    delete mongoose.models.Case;
+}
+
 const Case: Model<ICase> = mongoose.models.Case || mongoose.model<ICase>('Case', CaseSchema);
 
 export default Case;

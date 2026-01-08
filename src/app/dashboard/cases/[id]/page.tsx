@@ -28,11 +28,18 @@ async function getCase(id: string) {
     // @ts-ignore
     caseData._id = caseData._id.toString();
     // @ts-ignore
+    // @ts-ignore
     if(caseData.userId) caseData.userId = caseData.userId.toString();
-    
-    return caseData;
 
-    // TODO: Strict ownership check here
+    // Sanitize chatHistory to avoid ObjectId serialization issues
+    if (caseData.chatHistory) {
+        // @ts-ignore
+        caseData.chatHistory = caseData.chatHistory.map(msg => ({
+            role: msg.role,
+            content: msg.content,
+            createdAt: msg.createdAt, // properties like _id are dropped here implicitly by creating new obj, or explicit
+        }));
+    }
     
     return caseData;
 }
@@ -47,6 +54,8 @@ export default async function CasePage({ params }: { params: Promise<{ id: strin
   console.log(`[CasePage] Fetched case ${id}. Status: ${caseData?.status}`);
   console.log(`[CasePage] structuredData type:`, typeof caseData?.structuredData, caseData?.structuredData);
   console.log(`[CasePage] analysis length:`, caseData?.analysis?.length);
+  // @ts-ignore
+  console.log(`[CasePage] chatHistory length:`, caseData?.chatHistory?.length);
 
   if (!caseData) {
     return notFound(); 

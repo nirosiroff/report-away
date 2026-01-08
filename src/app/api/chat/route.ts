@@ -86,7 +86,14 @@ export async function POST(req: NextRequest) {
     // @ts-ignore
     caseData.chatHistory.push(assistantMessage);
     
+    // DEBUG: Log before save
+    console.log(`[ChatAPI] Saving history... Current Length: ${caseData.chatHistory.length}`);
+    
     await caseData.save();
+
+    // DEBUG: Verify it persisted
+    const verify = await Case.findById(caseId);
+    console.log(`[ChatAPI] Post-save verification. History Length: ${verify?.chatHistory?.length}`);
 
     return NextResponse.json({ 
         success: true, 
