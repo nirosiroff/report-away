@@ -4,6 +4,7 @@ import Case from "@/models/Case";
 import fs from 'fs';
 import path from 'path';
 
+
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
@@ -56,7 +57,7 @@ export async function analyzeCase(caseId: string) {
 
       for (const t of tickets) {
           const isImage = /\.(jpeg|jpg|png|webp|gif|bmp|tiff)$/i.test(t.fileUrl);
-          // If regex fails but it's not a PDF, we might assume image, but let's stick to regex to be safe.
+          const isPDF = /\.pdf$/i.test(t.fileUrl);
           
           if (isImage) {
               let imageUrl = t.fileUrl;
@@ -82,9 +83,70 @@ export async function analyzeCase(caseId: string) {
                       url: imageUrl,
                   }
               });
+// ... no PDFParser
+
+// ...
+
+          } else if (isPDF) {
+              console.log(`[Analysis] Processing PDF via OpenAI Files API: ${t.fileUrl}`);
+              try {
+                  // 1. Get the file locally (download if needed)
+                  let filePath: string;
+                  if (t.fileUrl.startsWith('/')) {
+                       filePath = path.join(process.cwd(), 'public', t.fileUrl);
+                  } else {
+                       // Download to temp
+                       const res = await fetch(t.fileUrl);
+                       if (!res.ok) throw new Error(`Failed to fetch PDF: ${res.statusText}`);
+                       const buffer = Buffer.from(await res.arrayBuffer());
+                       filePath = path.join('/tmp', `temp-${Date.now()}.pdf`);
+                       await fs.promises.writeFile(filePath, buffer);
+                  }
+
+                  // 2. Upload to OpenAI Files
+                  const fileUpload = await openai.files.create({
+                      file: fs.createReadStream(filePath),
+                      purpose: "assistants", // Generic purpose, often compatible
+                  });
+                  console.log(`[Analysis] Uploaded PDF to OpenAI, File ID: ${fileUpload.id}`);
+
+                  // 3. Cleanup temp
+                  if (!t.fileUrl.startsWith('/')) {
+                      await fs.promises.unlink(filePath);
+                  }
+
+                  // 4. Pass File ID?
+                  // NOTE: Official Chat Completions API generally supports image_url or text. 
+                  // passing 'image_file' with a PDF file_id is the experimental/beta feature or implies internal conversion.
+                  // We will try to pass it as a content part.
+                  // If this fails, we effectively confirm Chat Completions strictly needs images.
+                  /*
+                    The user's example used "type": "input_file". 
+                    Since we can't be sure of the SDK support for 'input_file' without types,
+                    we will try standard extraction or fallback to text if this fails.
+                    Actually, let's try to inject the specific user-requested format just in case the SDK passes it through.
+                  */
+                 
+                 // However, since we are constrained, I will rely on the text extraction VIA Chat if possible.
+                 // BUT wait, I will try to use the 'refusal' mechanism to debug.
+                 
+                 // Let's try passing the file_id as a "image_file" which works for images.
+                 // If OpenAI supports PDF natively now, this might work.
+                  // 5. Pass File ID using "file" type (as per supported values list)
+                  contentParts.push({
+                      type: "file",
+                      file: {
+                          file_id: fileUpload.id
+                      }
+                  });
+
+              } catch (e) {
+                   console.error(`[Analysis] PDF upload failed:`, e);
+                   contentParts.push({ type: "text", text: `(Failed to process PDF file at ${t.fileUrl})`});
+              }
           } else {
              // Fallback for non-images
-             contentParts.push({ type: "text", text: `(Additional document at ${t.fileUrl} - format not supported for direct vision analysis)`});
+             contentParts.push({ type: "text", text: `(Additional document at ${t.fileUrl} - format not supported)`});
           }
       }
 
@@ -105,8 +167,18 @@ export async function analyzeCase(caseId: string) {
           response_format: { type: "json_object" }
       });
 
-      const rawExtraction = extractionResponse.choices[0].message.content;
-      if (!rawExtraction) throw new Error("Failed to extract data from AI response.");
+      console.log("[Analysis] OpenAI Raw Response:", JSON.stringify(extractionResponse.choices[0], null, 2));
+
+      const choice = extractionResponse.choices[0];
+      if (choice.message.refusal) {
+          throw new Error(`AI Refusal: ${choice.message.refusal}`);
+      }
+
+      const rawExtraction = choice.message.content;
+      if (!rawExtraction) {
+          console.error("[Analysis] Empty content received. Finish reason:", choice.finish_reason);
+          throw new Error(`Failed to extract data. Finish reason: ${choice.finish_reason}`);
+      }
 
       const extractedData = JSON.parse(rawExtraction);
 
@@ -144,7 +216,7 @@ export async function analyzeCase(caseId: string) {
       });
 
       caseData.analysis = strategyResponse.choices[0].message.content || "Analysis failed.";
-      console.log(`[Analysis] OpenAI strategy received.`);
+      console.log(`[Analysis] OpenAI strategy received. \n ${caseData.analysis}`);
 
       // Step 5: Finalize
       console.log(`[Analysis] Step 5: Complete.`);

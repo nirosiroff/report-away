@@ -7,14 +7,18 @@ import { AlertCircle, Play, Loader2, CheckCircle2, FileText } from "lucide-react
 import { startAnalysis } from "@/actions/analysis-actions";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useRouter } from 'next/navigation';
 
 export function CaseAnalysis({ caseData }: { caseData: any }) {
     const [isPending, startTransition] = useTransition();
+    const router = useRouter();
 
     const handleStartAnalysis = () => {
         startTransition(async () => {
              const res = await startAnalysis(caseData._id); // Pass caseId
-             if (!res.success) {
+             if (res.success) {
+                 router.refresh();
+             } else {
                  alert("Analysis failed to start: " + res.error);
              }
         });
