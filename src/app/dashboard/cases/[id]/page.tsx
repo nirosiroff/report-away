@@ -69,10 +69,10 @@ export default async function CasePage({ params }: { params: Promise<{ id: strin
                     <TabsTrigger value="files">Files</TabsTrigger>
                     <TabsTrigger value="analysis">Analysis & Strategy</TabsTrigger>
                 </TabsList>
-                <TabsContent value="files" className="flex-1 overflow-auto mt-4 border rounded-lg p-4 bg-white/50 dark:bg-slate-900/50">
+                <TabsContent value="files" className="bg-white flex-1 overflow-auto mt-4 border rounded-lg p-4 dark:bg-slate-900/50">
                     <TicketList caseId={caseData._id.toString()} tickets={tickets} />
                 </TabsContent>
-                <TabsContent value="analysis" className="flex-1 overflow-auto mt-4 border rounded-lg p-4 bg-white/50 dark:bg-slate-900/50">
+                <TabsContent value="analysis" className="flex-1 overflow-auto mt-4 border rounded-lg p-4 bg-white dark:bg-slate-900/50">
                      <CaseAnalysis caseData={JSON.parse(JSON.stringify(caseData))} />
                 </TabsContent>
             </Tabs>
@@ -83,8 +83,11 @@ export default async function CasePage({ params }: { params: Promise<{ id: strin
                 <h3 className="font-semibold leading-none tracking-tight">AI Assistant</h3>
                 <p className="text-sm text-muted-foreground mt-1">Chat about your case.</p>
             </div>
-            <div className="flex-1 p-0 overflow-hidden relative">
-                 <ChatInterface caseId={caseData._id.toString()} />
+             <div className="flex-1 p-0 overflow-hidden relative">
+                 <ChatInterface 
+                    caseId={caseData._id.toString()} 
+                    initialHistory={caseData.chatHistory}
+                 />
             </div>
         </div>
       </div>

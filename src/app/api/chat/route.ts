@@ -1,80 +1,96 @@
+import { NextRequest, NextResponse } from "next/server";
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
-import { NextResponse } from "next/server";
 import connectDB from "@/lib/db";
 import Case from "@/models/Case";
-import Ticket from "@/models/Ticket";
-import Message from "@/models/Message";
 import OpenAI from "openai";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
     const { getUser } = getKindeServerSession();
-    const kindeUser = await getUser();
+    const user = await getUser();
 
-    if (!kindeUser) {
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { messages, caseId } = await req.json();
+    const { caseId, content } = await req.json();
 
-    if (!caseId || !messages) {
-      return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+    if (!caseId || !content) {
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
     await connectDB();
-    const currentCase = await Case.findById(caseId);
-    if (!currentCase) {
-        return NextResponse.json({ error: "Case not found" }, { status: 404 });
+    const caseData = await Case.findById(caseId);
+
+    if (!caseData) {
+      return NextResponse.json({ error: "Case not found" }, { status: 404 });
     }
 
-    // TODO: Verify user ownership of case
-    // if (currentCase.userId.toString() !== user._id.toString()) return 403
+    // Verify ownership (optional but recommended)
+    // if (caseData.userId.toString() !== user.id) ... 
     
-    // Fetch context (Tickets)
-    const tickets = await Ticket.find({ caseId });
-    const ticketContext = tickets.map(t => `Ticket Analysis: ${t.analysis || 'Not analyzed yet'}`).join('\n');
+    // Append User Message to DB
+    const userMessage = { role: 'user', content, createdAt: new Date() };
+    
+    // Ensure chatHistory exists
+    if (!caseData.chatHistory) {
+        caseData.chatHistory = [];
+    }
+    
+    // @ts-ignore
+    caseData.chatHistory.push(userMessage);
 
-    const systemMessage = {
-      role: "system",
-      content: `You are an expert traffic ticket lawyer assistant. You are helping a user with their case "${currentCase.title}".
+    // Prepare Context for LLM
+    const context = `
+      Case Title: ${caseData.title}
+      Status: ${caseData.status}
       
-      Case Context:
-      ${ticketContext}
+      Extracted Ticket Facts:
+      ${JSON.stringify(caseData.structuredData, null, 2)}
       
-      Advice should be helpful, pointing out potential challenges based on the ticket details. 
-      Do not give definitive legal guarantees.
-      `
-    };
+      Legal Analysis & Strategy:
+      ${caseData.analysis || "Analysis not yet complete."}
+    `;
 
-    // Save user message
-    const lastUserMsg = messages[messages.length - 1];
-    await Message.create({
-        caseId,
-        role: 'user',
-        content: lastUserMsg.content
-    });
+    const systemPrompt = `You are ReportAway's expert traffic law AI assistant. 
+    You have access to the specific details of the user's traffic case.
+    Answer the user's questions clearly, referencing the facts and strategy provided below.
+    Do not make up laws; stick to the provided context and general traffic law principles.
+    
+    CASE CONTEXT:
+    ${context}
+    `;
 
+    // Construct full message history for the API call
+    // Limit history to last 10 messages for token efficiency if needed, but for now send all (or last 20)
+    const apiMessages = [
+        { role: 'system', content: systemPrompt },
+        // @ts-ignore
+        ...caseData.chatHistory.map(m => ({ role: m.role, content: m.content })) 
+    ];
+
+    // Call OpenAI
     const completion = await openai.chat.completions.create({
       model: "gpt-4o",
-      messages: [systemMessage, ...messages] as any,
+      messages: apiMessages as any,
     });
 
     const assistantContent = completion.choices[0].message.content || "I'm sorry, I couldn't generate a response.";
 
-    // Save assistant message
-    await Message.create({
-        caseId,
-        role: 'assistant',
-        content: assistantContent
-    });
+    // Append Assistant Message to DB
+    const assistantMessage = { role: 'assistant', content: assistantContent, createdAt: new Date() };
+    // @ts-ignore
+    caseData.chatHistory.push(assistantMessage);
+    
+    await caseData.save();
 
     return NextResponse.json({ 
-        role: 'assistant', 
-        content: assistantContent 
+        success: true, 
+        message: assistantMessage 
     });
 
   } catch (error) {

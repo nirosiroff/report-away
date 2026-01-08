@@ -40,7 +40,7 @@
   --foreground: 222 47% 11%;
   
   /* Texture: Balanced Tech Grid */
-  --bg-pattern: radial-gradient(#cbd5e1 1.5px, transparent 0.2px); /* Slate-300 dots, medium size */
+  --bg-pattern: radial-gradient(#e1e1e1 1.5px, transparent 0.05px); /* Slate-300 dots, medium size */
   --bg-size: 24px 24px; /* Spacious grid */
 
   --card: 0 0% 100%;

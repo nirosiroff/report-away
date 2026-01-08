@@ -9,6 +9,11 @@ export interface ICase extends Document {
   analysisLog?: string[];
   structuredData?: Record<string, any>;
   analysis?: string;
+  chatHistory?: {
+      role: 'user' | 'assistant';
+      content: string;
+      createdAt: Date;
+  }[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -25,6 +30,13 @@ const CaseSchema: Schema = new Schema(
     analysisLog: { type: [String], default: [] },
     structuredData: { type: Schema.Types.Mixed, default: {} },
     analysis: { type: String },
+    chatHistory: [
+        {
+            role: { type: String, enum: ['user', 'assistant'], required: true },
+            content: { type: String, required: true },
+            createdAt: { type: Date, default: Date.now }
+        }
+    ]
   },
   { timestamps: true }
 );
