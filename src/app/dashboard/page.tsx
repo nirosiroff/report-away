@@ -1,4 +1,4 @@
-import { getCases } from '@/actions/case-actions';
+import { getCases, deleteCase } from '@/actions/case-actions';
 import { NewCaseDialog } from '@/components/cases/NewCaseDialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -22,21 +22,29 @@ export default async function DashboardPage() {
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {cases.map((c) => (
-                <Link key={c.id} href={`/dashboard/cases/${c.id}`}>
-                    <Card className="hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors cursor-pointer">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">
-                                {c.title}
-                            </CardTitle>
-                            <Badge variant={c.status === 'Open' ? 'default' : 'secondary'}>{c.status}</Badge>
-                        </CardHeader>
-                        <CardContent>
-                            <p className="text-xs text-muted-foreground">
-                                Created {new Date(c.createdAt).toLocaleDateString()}
-                            </p>
-                        </CardContent>
-                    </Card>
-                </Link>
+                <div key={c.id} className="relative group">
+                    <Link href={`/dashboard/cases/${c.id}`}>
+                        <Card className="hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors cursor-pointer pb-8">
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">
+                                    {c.title}
+                                </CardTitle>
+                                <Badge variant={c.status === 'Open' ? 'default' : 'secondary'}>{c.status}</Badge>
+                            </CardHeader>
+                            <CardContent>
+                                <p className="text-xs text-muted-foreground">
+                                    Created {new Date(c.createdAt).toLocaleDateString()}
+                                </p>
+                            </CardContent>
+                        </Card>
+                    </Link>
+                    <form action={async () => {
+                        'use server';
+                        await deleteCase(c.id);
+                    }} className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                         <button type="submit" className="text-xs text-red-500 hover:underline bg-white/80 dark:bg-black/80 px-2 py-1 rounded">Delete</button>
+                    </form>
+                </div>
             ))}
         </div>
       )}

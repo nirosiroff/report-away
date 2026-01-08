@@ -29,12 +29,25 @@ export async function analyzeTicket(ticketId: string) {
   // ACTUALLY, I will generate a generic analysis because I cannot guarantee the environment has the file readable or API key valid.
   // However, I will write the code to use OpenAI if key is present.
 
+  ticket.status = 'Analyzing';
+  if (!ticket.analysisLog) ticket.analysisLog = [];
+  ticket.analysisLog.push(`[${new Date().toLocaleTimeString()}] Analysis started.`);
+  await ticket.save();
+
   if (!process.env.OPENAI_API_KEY) {
       console.warn("Missing OPENAI_API_KEY, skipping AI analysis.");
+      if (!ticket.analysisLog) ticket.analysisLog = [];
+      ticket.analysisLog.push(`[${new Date().toLocaleTimeString()}] Error: Missing API Key.`);
+      ticket.status = 'Failed';
+      await ticket.save();
       return;
   }
 
   try {
+      if (!ticket.analysisLog) ticket.analysisLog = [];
+      ticket.analysisLog.push(`[${new Date().toLocaleTimeString()}] Sending data to AI...`);
+      await ticket.save();
+
       // Mocking the analysis for now to ensure stability without complex file reading in this limited context
       // In production: Send Image to GPT-4o
       
@@ -55,10 +68,14 @@ export async function analyzeTicket(ticketId: string) {
       const analysisRaw = response.choices[0].message.content;
       
       ticket.analysis = analysisRaw || "Analysis failed.";
-      ticket.status = 'Analyzed'; // Assuming we add status to Ticket or updating Case
+      ticket.status = 'Analyzed'; 
+      ticket.analysisLog.push(`[${new Date().toLocaleTimeString()}] Analysis complete.`);
       await ticket.save();
 
   } catch (error) {
       console.error("OpenAI Analysis failed:", error);
+      ticket.analysisLog.push(`[${new Date().toLocaleTimeString()}] Analysis failed: ${(error as Error).message}`);
+      ticket.status = 'Failed';
+      await ticket.save();
   }
 }

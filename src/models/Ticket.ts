@@ -7,6 +7,7 @@ export interface ITicket extends Document {
   structuredData?: Record<string, any>;
   analysis?: string;
   status?: string;
+  analysisLog?: string[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -18,6 +19,8 @@ const TicketSchema: Schema = new Schema(
     rawText: { type: String },
     structuredData: { type: Schema.Types.Mixed },
     analysis: { type: String },
+    status: { type: String, default: 'Pending' },
+    analysisLog: { type: [String], default: [] },
   },
   { timestamps: true }
 );

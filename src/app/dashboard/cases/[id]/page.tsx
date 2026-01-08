@@ -29,8 +29,12 @@ async function getCase(id: string) {
     return caseData;
 }
 
-export default async function CasePage({ params }: { params: { id: string } }) {
-  const caseData = await getCase(params.id);
+import { getTickets } from "@/actions/ticket-actions";
+
+export default async function CasePage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const caseData = await getCase(id);
+  const tickets = await getTickets(id);
 
   if (!caseData) {
     return notFound(); 
@@ -48,16 +52,16 @@ export default async function CasePage({ params }: { params: { id: string } }) {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full min-h-0">
         <div className="lg:col-span-2 flex flex-col min-h-0">
-            <Tabs defaultValue="tickets" className="flex-1 flex flex-col min-h-0">
+            <Tabs defaultValue="files" className="flex-1 flex flex-col min-h-0">
                 <TabsList className="w-full justify-start">
-                    <TabsTrigger value="tickets">Tickets & Evidence</TabsTrigger>
+                    <TabsTrigger value="files">Files</TabsTrigger>
                     <TabsTrigger value="analysis">Analysis & Strategy</TabsTrigger>
                 </TabsList>
-                <TabsContent value="tickets" className="flex-1 overflow-auto mt-4 border rounded-lg p-4 bg-white/50 dark:bg-slate-900/50">
-                    <TicketList caseId={caseData._id.toString()} />
+                <TabsContent value="files" className="flex-1 overflow-auto mt-4 border rounded-lg p-4 bg-white/50 dark:bg-slate-900/50">
+                    <TicketList caseId={caseData._id.toString()} tickets={tickets} />
                 </TabsContent>
                 <TabsContent value="analysis" className="flex-1 overflow-auto mt-4 border rounded-lg p-4 bg-white/50 dark:bg-slate-900/50">
-                     <CaseAnalysis caseId={caseData._id.toString()} />
+                     <CaseAnalysis caseId={caseData._id.toString()} ticket={tickets[0]} />
                 </TabsContent>
             </Tabs>
         </div>

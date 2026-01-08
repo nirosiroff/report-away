@@ -5,10 +5,11 @@ import connectDB from "@/lib/db";
 import Ticket from "@/models/Ticket";
 import Case from "@/models/Case";
 import { revalidatePath } from "next/cache";
-import { writeFile } from 'fs/promises';
+import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid'; 
 import { analyzeTicket } from "@/lib/ai/analysis";
+import { put } from '@vercel/blob';
 
 export async function uploadTicket(formData: FormData) {
     const { getUser } = getKindeServerSession();
@@ -31,50 +32,65 @@ export async function uploadTicket(formData: FormData) {
     const ticketCase = await Case.findById(caseId); // Rename to avoid conflict with 'Case' model usage if needed, but here it's fine
     if (!ticketCase) throw new Error("Case not found");
      
-    // Simple local save for prototype
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-
-    // Save to public/uploads
-    // Ensure directory exists in real app, here assuming we create it via command
+    // Vercel Blob Upload or Local Fallback
     const filename = `${Date.now()}-${file.name.replace(/\s/g, '_')}`;
-    const uploadDir = path.join(process.cwd(), 'public', 'uploads');
-    const filepath = path.join(uploadDir, filename);
+    let fileUrl = '';
     
-    try {
-        await writeFile(filepath, buffer);
-    } catch (error) {
-        console.error("Error saving file locally:", error);
-        // Fallback or better error handling
+    // Check for the custom env var provided by user
+    const blobToken = process.env.BLOB_REPORT_READ_WRITE_TOKEN;
+
+    if (blobToken) {
+        try {
+            const { url } = await put(filename, file, { 
+                access: 'public',
+                token: blobToken // Explicitly pass the token
+            });
+            fileUrl = url;
+            console.log("Uploaded to Vercel Blob:", fileUrl);
+        } catch (error) {
+            console.error("Vercel Blob upload failed:", error);
+            throw new Error("File upload failed");
+        }
+    } else {
+        console.warn("BLOB_REPORT_READ_WRITE_TOKEN not found, falling back to local storage.");
+        try {
+            const bytes = await file.arrayBuffer();
+            const buffer = Buffer.from(bytes);
+            const uploadDir = path.join(process.cwd(), 'public', 'uploads');
+            
+            await mkdir(uploadDir, { recursive: true });
+            
+            const filepath = path.join(uploadDir, filename);
+            await writeFile(filepath, buffer);
+            fileUrl = `/uploads/${filename}`;
+            console.log("Uploaded locally:", fileUrl);
+        } catch (error) {
+            console.error("Local upload failed:", error);
+            throw new Error("File upload failed");
+        }
     }
-
-    const fileUrl = `/uploads/${filename}`;
-
-// ... (existing imports)
-// ... (existing imports)
 
     const newTicket = await Ticket.create({
         caseId,
         fileUrl,
-        rawText: "Pending extraction...", 
+        status: 'Uploaded',
+        rawText: "Pending analysis...", 
     });
-
-    // Update case status
-    ticketCase.status = 'Analysis In Progress';
-    await ticketCase.save();
-
-    // Trigger Analysis (Async)
-    // We don't await this if we want fast response, but for Vercel functions it might be killed.
-    // Ideally use background job. For now, await it to ensure it runs.
-    try {
-        await analyzeTicket(newTicket._id.toString());
-    } catch (e) {
-        console.error("Analysis trigger failed", e);
-    }
+    
+    // Note: Analysis is now triggered manually via 'startAnalysis'
 
 
     revalidatePath(`/dashboard/cases/${caseId}`);
-    return { success: true, ticket: newTicket };
+    return { 
+        success: true, 
+        ticket: {
+            id: newTicket._id.toString(),
+            fileUrl: newTicket.fileUrl,
+            status: newTicket.status,
+            createdAt: newTicket.createdAt,
+            // Add other fields if needed by UI
+        } 
+    };
 }
 
 export async function getTickets(caseId: string) {

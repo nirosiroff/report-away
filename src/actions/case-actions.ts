@@ -61,11 +61,44 @@ export async function getCases() {
     if (!user) return [];
 
     const cases = await Case.find({ userId: user._id }).sort({ createdAt: -1 });
-    // Convert to plain object to avoid serialization warnings in client components if passed directly
+
     return cases.map(c => ({
         id: c._id.toString(),
         title: c.title,
         status: c.status,
         createdAt: c.createdAt,
     }));
+}
+
+// Helper imports for deletion logic
+import Ticket from "@/models/Ticket";
+import Message from "@/models/Message";
+
+export async function deleteCase(caseId: string) {
+    const { getUser } = getKindeServerSession();
+    const user = await getUser();
+
+    if (!user) {
+        throw new Error("Unauthorized");
+    }
+
+    await connectDB();
+    
+    // Verify ownership
+    const localUser = await User.findOne({ kindeId: user.id });
+    if (!localUser) throw new Error("User not found");
+
+    const caseToDelete = await Case.findOne({ _id: caseId, userId: localUser._id });
+    if (!caseToDelete) {
+        throw new Error("Case not found or unauthorized");
+    }
+
+    // Delete related data
+    await Ticket.deleteMany({ caseId: caseToDelete._id });
+    await Message.deleteMany({ caseId: caseToDelete._id });
+    
+    // Delete case
+    await Case.findByIdAndDelete(caseToDelete._id);
+
+    revalidatePath('/dashboard');
 }
