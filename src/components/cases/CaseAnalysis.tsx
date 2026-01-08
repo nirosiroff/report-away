@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { useRouter } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { EditFactsDialog } from './EditFactsDialog';
 
 export function CaseAnalysis({ caseData }: { caseData: any }) {
     const [isPending, startTransition] = useTransition();
@@ -70,9 +71,12 @@ export function CaseAnalysis({ caseData }: { caseData: any }) {
                         {hasData ? (
                             <Card className="h-full border-l-4 border-l-primary/20 shadow-sm">
                                 <CardHeader className="bg-muted/30 pb-3">
-                                    <CardTitle className="text-sm font-medium flex items-center gap-2">
-                                        <FileText className="h-4 w-4 text-primary" />
-                                        Extracted Facts
+                                    <CardTitle className="text-sm font-medium flex items-center justify-between gap-2 w-full">
+                                        <div className="flex items-center gap-2">
+                                            <FileText className="h-4 w-4 text-primary" />
+                                            Extracted Facts
+                                        </div>
+                                        <EditFactsDialog caseId={caseData._id} data={caseData.structuredData} />
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent className="p-0">
