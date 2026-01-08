@@ -16,13 +16,21 @@ async function getCase(id: string) {
     if (!user) return null;
 
     await connectDB();
-    const caseData = await Case.findById(id).populate('userId');
+    const caseData = await Case.findById(id).populate('userId').lean();
     
     // Check ownership
     // Note: populating userId might return an object, but kindeId check is safer if we had it, 
     // or just check existing user's kindeId against case.userId ref lookup.
     // simpler:
     if (!caseData) return null;
+
+    // Convert _id to string to avoid serialization issues
+    // @ts-ignore
+    caseData._id = caseData._id.toString();
+    // @ts-ignore
+    if(caseData.userId) caseData.userId = caseData.userId.toString();
+    
+    return caseData;
 
     // TODO: Strict ownership check here
     
@@ -35,6 +43,10 @@ export default async function CasePage({ params }: { params: Promise<{ id: strin
   const { id } = await params;
   const caseData = await getCase(id);
   const tickets = await getTickets(id);
+
+  console.log(`[CasePage] Fetched case ${id}. Status: ${caseData?.status}`);
+  console.log(`[CasePage] structuredData type:`, typeof caseData?.structuredData, caseData?.structuredData);
+  console.log(`[CasePage] analysis length:`, caseData?.analysis?.length);
 
   if (!caseData) {
     return notFound(); 

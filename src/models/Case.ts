@@ -23,7 +23,7 @@ const CaseSchema: Schema = new Schema(
       default: 'Open',
     },
     analysisLog: { type: [String], default: [] },
-    structuredData: { type: Map, of: Schema.Types.Mixed },
+    structuredData: { type: Schema.Types.Mixed, default: {} },
     analysis: { type: String },
   },
   { timestamps: true }

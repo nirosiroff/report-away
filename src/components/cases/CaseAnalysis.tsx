@@ -10,6 +10,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRouter } from 'next/navigation';
 
 export function CaseAnalysis({ caseData }: { caseData: any }) {
+    console.log("[CaseAnalysis] Client Component Received:", {
+        status: caseData?.status,
+        hasStructuredData: !!caseData?.structuredData,
+        structuredDataKeys: caseData?.structuredData ? Object.keys(caseData.structuredData) : [],
+        analysisLength: caseData?.analysis?.length
+    });
+
     const [isPending, startTransition] = useTransition();
     const router = useRouter();
 

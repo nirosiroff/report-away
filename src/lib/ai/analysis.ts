@@ -216,13 +216,19 @@ export async function analyzeCase(caseId: string) {
       });
 
       caseData.analysis = strategyResponse.choices[0].message.content || "Analysis failed.";
-      console.log(`[Analysis] OpenAI strategy received. \n ${caseData.analysis}`);
-
-      // Step 5: Finalize
+      
+      console.log(`[Analysis] PRE-SAVE DEBUG:`);
+      console.log(`[Analysis] - structuredData keys: ${caseData.structuredData ? Object.keys(caseData.structuredData).join(', ') : 'MISSING'}`);
+      console.log(`[Analysis] - analysis length: ${caseData.analysis ? caseData.analysis.length : 'MISSING'}`);
+      
+      caseData.markModified('structuredData');
+      caseData.markModified('analysis');
+      
       console.log(`[Analysis] Step 5: Complete.`);
       caseData.analysisLog.push(`[${new Date().toLocaleTimeString()}] Analysis complete.`);
       caseData.status = 'Ready';
       await caseData.save();
+      console.log(`[Analysis] Case saved successfully.`);
 
   } catch (error) {
       console.error("[Analysis] Failed:", error);
