@@ -63,6 +63,14 @@
       "titleLabel": "כותרת",
       "placeholder": "לדוגמה: דוח מהירות - 20 בינואר",
       "submit": "צור תיק"
+    },
+    "deleteDialog": {
+      "buttonTitle": "מחק תיק",
+      "title": "האם אתם בטוחים?",
+      "description": "פעולה זו לא ניתנת לביטול. התיק וכל המידע הקשור אליו יימחקו לצמיתות.",
+      "cancel": "ביטול",
+      "confirm": "מחק",
+      "deleting": "מוחק..."
     }
   },
   "status": {

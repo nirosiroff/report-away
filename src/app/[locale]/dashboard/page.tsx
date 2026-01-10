@@ -1,10 +1,10 @@
-import { getCases, deleteCase } from '@/actions/case-actions';
+import { getCases } from '@/actions/case-actions';
 import { NewCaseDialog } from '@/components/cases/NewCaseDialog';
+import { DeleteCaseButton } from '@/components/cases/DeleteCaseButton';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
-import { Trash2, TrendingUp, AlertCircle, CheckCircle2, FileText } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { TrendingUp, AlertCircle, CheckCircle2, FileText } from 'lucide-react';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 
 type Props = {
@@ -117,7 +117,7 @@ export default async function DashboardPage({ params }: Props) {
                                             </CardDescription>
                                         </div>
                                         <Badge variant="outline" className={getStatusColor(c.status)}>
-                                            {c.status}
+                                            {t(`status.${c.status.toLowerCase().replace(/\s+/g, '_')}`)}
                                         </Badge>
                                     </div>
                                 </CardHeader>
@@ -129,20 +129,9 @@ export default async function DashboardPage({ params }: Props) {
                             </Card>
                         </Link>
                         
-                        <form action={async () => {
-                            'use server';
-                            await deleteCase(c.id);
-                        }} className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-all duration-200">
-                             <Button 
-                                type="submit" 
-                                variant="destructive" 
-                                size="icon" 
-                                className="h-8 w-8 rounded-full shadow-lg"
-                                title={t('caseCard.delete')}
-                            >
-                                <Trash2 className="h-4 w-4" />
-                            </Button>
-                        </form>
+                        <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-all duration-200">
+                            <DeleteCaseButton caseId={c.id} />
+                        </div>
                     </div>
                 ))}
             </div>

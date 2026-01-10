@@ -63,6 +63,14 @@
       "titleLabel": "Title",
       "placeholder": "e.g. Speeding Ticket - Jan 20",
       "submit": "Create Case"
+    },
+    "deleteDialog": {
+      "buttonTitle": "Delete Case",
+      "title": "Are you sure?",
+      "description": "This action cannot be undone. This will permanently delete the case and all associated data.",
+      "cancel": "Cancel",
+      "confirm": "Delete",
+      "deleting": "Deleting..."
     }
   },
   "status": {

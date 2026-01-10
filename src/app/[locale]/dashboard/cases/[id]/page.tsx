@@ -1,7 +1,6 @@
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 import connectDB from "@/lib/db";
 import Case from "@/models/Case";
-import Ticket from "@/models/Ticket"; // Helper to avoid error if model not loaded
 import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -10,34 +9,98 @@ import { TicketList } from "@/components/cases/TicketList";
 import { CaseAnalysis } from "@/components/cases/CaseAnalysis";
 import { getTickets } from "@/actions/ticket-actions";
 import { setRequestLocale, getTranslations } from "next-intl/server";
+import { Types } from "mongoose";
 
-async function getCase(id: string) {
+// Type for the populated user object
+interface PopulatedUser {
+    _id: Types.ObjectId | string;
+    kindeId: string;
+    email?: string;
+    name?: string;
+}
+
+// Type for the Mongoose lean result
+interface CaseDocument {
+    _id: Types.ObjectId | string;
+    title: string;
+    status: string;
+    createdAt: Date;
+    userId?: Types.ObjectId | string | PopulatedUser;
+    analysis?: string;
+    structuredData?: Record<string, unknown>;
+    chatHistory?: Array<{
+        _id?: Types.ObjectId;
+        role: 'user' | 'assistant';
+        content: string;
+        createdAt?: Date;
+    }>;
+}
+
+// Type for the serialized case returned from getCase
+interface SerializedCase extends Omit<CaseDocument, '_id' | 'userId' | 'chatHistory'> {
+    _id: string;
+    userId?: string;
+    chatHistory?: Array<{
+        role: 'user' | 'assistant';
+        content: string;
+        createdAt?: Date;
+    }>;
+}
+
+async function getCase(id: string): Promise<SerializedCase | null> {
     const { getUser } = getKindeServerSession();
     const user = await getUser();
     if (!user) return null;
 
     await connectDB();
-    const caseData = await Case.findById(id).populate('userId').lean();
+    const caseData = await Case.findById(id).populate('userId').lean() as CaseDocument | null;
     
     if (!caseData) return null;
 
-    // Convert _id to string to avoid serialization issues
-    // @ts-ignore
-    caseData._id = caseData._id.toString();
-    // @ts-ignore
-    if(caseData.userId) caseData.userId = caseData.userId.toString();
+    // Authorization check: verify the current user owns this case
+    // The userId field may be populated (object with kindeId) or a string reference
+    const populatedUser = caseData.userId as PopulatedUser | undefined;
+    const caseOwnerId = populatedUser?.kindeId || populatedUser?._id?.toString() || (typeof caseData.userId === 'string' ? caseData.userId : undefined);
+    const currentUserId = user.id?.toString();
+    
+    if (!caseOwnerId || !currentUserId || caseOwnerId !== currentUserId) {
+        // User doesn't own this case - return null (will show 404)
+        return null;
+    }
+
+    // Build serialized result with string IDs
+    // Handle userId which may be a string, ObjectId, or populated user object
+    let serializedUserId: string | undefined;
+    if (caseData.userId) {
+        if (typeof caseData.userId === 'object' && '_id' in caseData.userId) {
+            // Populated user object - extract _id
+            serializedUserId = (caseData.userId as PopulatedUser)._id.toString();
+        } else {
+            // String or ObjectId - both have toString()
+            serializedUserId = String(caseData.userId);
+        }
+    }
+    
+    const serialized: SerializedCase = {
+        _id: caseData._id.toString(),
+        title: caseData.title,
+        status: caseData.status,
+        createdAt: caseData.createdAt,
+        userId: serializedUserId,
+        analysis: caseData.analysis,
+        structuredData: caseData.structuredData,
+    };
 
     // Sanitize chatHistory to avoid ObjectId serialization issues
     if (caseData.chatHistory) {
-        // @ts-ignore
-        caseData.chatHistory = caseData.chatHistory.map(msg => ({
+        serialized.chatHistory = caseData.chatHistory.map(msg => ({
             role: msg.role,
             content: msg.content,
             createdAt: msg.createdAt,
         }));
     }
     
-    return caseData;
+    return serialized;
 }
 
 type Props = {

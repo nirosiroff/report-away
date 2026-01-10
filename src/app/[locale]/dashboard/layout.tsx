@@ -13,7 +13,7 @@ export default async function DashboardLayout({
   const isRTL = locale === 'he';
   
   const user = kindeUser ? {
-      name: `${kindeUser.given_name} ${kindeUser.family_name}`,
+      name: [kindeUser.given_name, kindeUser.family_name].filter(Boolean).join(' ') || kindeUser.email || null,
       email: kindeUser.email,
       picture: kindeUser.picture
   } : null;
