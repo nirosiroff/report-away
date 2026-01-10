@@ -70,7 +70,9 @@
       "description": "This action cannot be undone. This will permanently delete the case and all associated data.",
       "cancel": "Cancel",
       "confirm": "Delete",
-      "deleting": "Deleting..."
+      "deleting": "Deleting...",
+      "errorTitle": "Delete failed",
+      "errorDescription": "Failed to delete the case. Please try again."
     }
   },
   "status": {
