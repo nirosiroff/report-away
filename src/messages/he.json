@@ -1,0 +1,86 @@
+{
+  "common": {
+    "appName": "ReportAway",
+    "signIn": "התחברות",
+    "signOut": "התנתקות",
+    "getStarted": "התחל עכשיו"
+  },
+  "landing": {
+    "hero": {
+      "title": "הילחמו בדוחות תנועה עם AI",
+      "subtitle": "העלו את הדוח שלכם, קבלו ניתוח מיידי, וגלו כיצד לערער עליו באמצעות הערכה מתקדמת של בינה מלאכותית.",
+      "cta": "התחילו את התיק"
+    },
+    "features": {
+      "extraction": {
+        "title": "חילוץ מיידי",
+        "description": "ה-AI החזותי שלנו קורא פרטי דוחות בכתב יד ובדפוס תוך שניות."
+      },
+      "assessment": {
+        "title": "הערכה חכמה",
+        "description": "קבלו פירוט מפורט של אפשרויות הערעור שלכם בהתבסס על חוקי התעבורה."
+      },
+      "chat": {
+        "title": "צ'אט AI לתיק",
+        "description": "שוחחו עם עוזר AI שמבין את פרטי התיק הספציפי שלכם."
+      }
+    },
+    "footer": {
+      "rights": "© 2026 ReportAway. כל הזכויות שמורות.",
+      "terms": "תנאי שימוש",
+      "privacy": "פרטיות"
+    }
+  },
+  "sidebar": {
+    "menu": "תפריט",
+    "dashboard": "לוח בקרה",
+    "profile": "פרופיל",
+    "newAssessment": "הערכה חדשה"
+  },
+  "dashboard": {
+    "title": "לוח בקרה",
+    "subtitle": "נהלו את הערכות הגנת התעבורה הפעילות שלכם.",
+    "metrics": {
+      "totalCases": "סה״כ תיקים",
+      "analyzed": "נותחו",
+      "inProgress": "בתהליך",
+      "needsReview": "דורש בדיקה"
+    },
+    "recentAssessments": "הערכות אחרונות",
+    "noCases": {
+      "title": "לא נמצאו תיקים",
+      "description": "העלו את דוח התנועה הראשון שלכם לקבלת הערכת AI מיידית."
+    },
+    "caseCard": {
+      "id": "מזהה",
+      "created": "נוצר",
+      "delete": "מחק תיק"
+    },
+    "newCase": {
+      "button": "תיק חדש",
+      "title": "יצירת תיק חדש",
+      "description": "התחילו הערכת דוח תנועה חדש.",
+      "titleLabel": "כותרת",
+      "placeholder": "לדוגמה: דוח מהירות - 20 בינואר",
+      "submit": "צור תיק"
+    }
+  },
+  "status": {
+    "ready": "מוכן",
+    "inProgress": "ניתוח בתהליך",
+    "closed": "סגור",
+    "open": "פתוח"
+  },
+  "caseDetail": {
+    "created": "נוצר",
+    "files": "קבצים",
+    "analysis": "ניתוח ואסטרטגיה",
+    "aiAssistant": "עוזר AI",
+    "chatPrompt": "שוחחו על התיק שלכם."
+  },
+  "profile": {
+    "title": "פרופיל",
+    "userInfo": "פרטי משתמש",
+    "manageAccount": "נהלו את פרטי החשבון שלכם."
+  }
+}

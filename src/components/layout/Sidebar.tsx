@@ -2,10 +2,12 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useTranslations, useLocale } from 'next-intl';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { LanguageToggle } from './LanguageToggle';
 import { 
   LayoutDashboard, 
   Settings, 
@@ -15,7 +17,6 @@ import {
   Scale,
   ChevronsLeft,
   ChevronsRight,
-  FileText
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
@@ -29,6 +30,9 @@ interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
 
 export function Sidebar({ className, user }: SidebarProps) {
   const pathname = usePathname();
+  const t = useTranslations('sidebar');
+  const tCommon = useTranslations('common');
+  const locale = useLocale();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
@@ -42,16 +46,16 @@ export function Sidebar({ className, user }: SidebarProps) {
 
   const routes = [
     {
-      label: 'Dashboard',
+      label: t('dashboard'),
       icon: LayoutDashboard,
-      href: '/dashboard',
-      active: pathname === '/dashboard',
+      href: `/${locale}/dashboard`,
+      active: pathname === `/${locale}/dashboard`,
     },
     {
-      label: 'Profile',
+      label: t('profile'),
       icon: Settings,
-      href: '/dashboard/profile',
-      active: pathname === '/dashboard/profile',
+      href: `/${locale}/dashboard/profile`,
+      active: pathname === `/${locale}/dashboard/profile`,
     },
   ];
 
@@ -73,7 +77,7 @@ export function Sidebar({ className, user }: SidebarProps) {
             </div>
             {!isCollapsed && (
                 <span className="font-display text-xl tracking-tight text-white">
-                    ReportAway
+                    {tCommon('appName')}
                 </span>
             )}
         </div>
@@ -96,7 +100,7 @@ export function Sidebar({ className, user }: SidebarProps) {
         <div className="space-y-2">
             {!isCollapsed && (
                 <h3 className="mb-2 px-4 text-[10px] font-black uppercase tracking-wider text-muted-foreground/60">
-                    Menu
+                    {t('menu')}
                 </h3>
             )}
             {routes.map((route) => (
@@ -131,9 +135,9 @@ export function Sidebar({ className, user }: SidebarProps) {
                 )} 
                 asChild
             >
-                <Link href="/dashboard" className="flex items-center justify-center">
+                <Link href={`/${locale}/dashboard`} className="flex items-center justify-center">
                     <PlusCircle className={cn("h-4 w-4", !isCollapsed && "mr-2")} />
-                    {!isCollapsed && "New Assessment"}
+                    {!isCollapsed && t('newAssessment')}
                 </Link>
             </Button>
         </div>
@@ -141,6 +145,11 @@ export function Sidebar({ className, user }: SidebarProps) {
 
       {/* User Footer */}
       <div className="p-4 border-t border-white/10 bg-black/20">
+        {/* Language Toggle */}
+        <div className="mb-3">
+          <LanguageToggle collapsed={isCollapsed} />
+        </div>
+        
         <div className={cn("flex items-center gap-3 p-2 rounded-xl transition-colors", !isCollapsed && "hover:bg-white/5 cursor-pointer")}>
              <Avatar className="h-9 w-9 border-2 border-white/10 shadow-sm">
                 <AvatarImage src={user?.picture || ''} />
@@ -159,7 +168,7 @@ export function Sidebar({ className, user }: SidebarProps) {
             <Button variant="ghost" className="w-full justify-start text-slate-400 hover:text-white hover:bg-white/5 h-8 text-xs mt-2" asChild>
                 <Link href="/api/auth/logout">
                 <LogOut className="mr-2 h-3 w-3" />
-                Sign Out
+                {tCommon('signOut')}
                 </Link>
             </Button>
         )}
@@ -169,6 +178,7 @@ export function Sidebar({ className, user }: SidebarProps) {
 }
 
 export function MobileSidebar({ user }: { user: SidebarProps['user'] }) {
+    const locale = useLocale();
     return (
         <Sheet>
             <SheetTrigger asChild>
@@ -176,7 +186,7 @@ export function MobileSidebar({ user }: { user: SidebarProps['user'] }) {
                     <Menu className="h-5 w-5" />
                 </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="p-0 w-[280px] border-r-0 bg-transparent shadow-none">
+            <SheetContent side={locale === 'he' ? 'right' : 'left'} className="p-0 w-[280px] border-r-0 bg-transparent shadow-none">
                 <Sidebar className="h-full w-full rounded-r-2xl border-r shadow-2xl" user={user} />
             </SheetContent>
         </Sheet>

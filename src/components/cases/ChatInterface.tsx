@@ -16,7 +16,7 @@ interface Message {
 
 export function ChatInterface({ caseId, initialHistory = [] }: { caseId: string, initialHistory?: Message[] }) {
   const [messages, setMessages] = useState<Message[]>(initialHistory.length > 0 ? initialHistory : [
-      { role: 'assistant', content: "Hello! I can help you analyze your ticket. Ask me anything about the strategy." }
+      { role: 'assistant', content: 'Hello! I can help you analyze your ticket. Ask me anything about the strategy.' }
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);

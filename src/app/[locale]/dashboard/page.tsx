@@ -5,9 +5,18 @@ import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { Trash2, TrendingUp, AlertCircle, CheckCircle2, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 
-export default async function DashboardPage() {
+type Props = {
+  params: Promise<{ locale: string }>;
+};
+
+export default async function DashboardPage({ params }: Props) {
+  const { locale } = await params;
+  setRequestLocale(locale);
+  
   const cases = await getCases();
+  const t = await getTranslations('dashboard');
 
   // Calculate Metrics
   const totalCases = cases.length;
@@ -30,8 +39,8 @@ export default async function DashboardPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
             <div>
-                <h1 className="text-3xl font-display font-bold tracking-tight text-foreground">Dashboard</h1>
-                <p className="text-muted-foreground mt-1">Manage your active traffic defense assessments.</p>
+                <h1 className="text-3xl font-display font-bold tracking-tight text-foreground">{t('title')}</h1>
+                <p className="text-muted-foreground mt-1">{t('subtitle')}</p>
             </div>
             <NewCaseDialog />
         </div>
@@ -39,7 +48,7 @@ export default async function DashboardPage() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <Card className="bg-gradient-to-br from-indigo-50 to-white dark:from-indigo-950/20 dark:to-background border-indigo-100 dark:border-indigo-900/50 shadow-sm">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium text-muted-foreground">Total Cases</CardTitle>
+                    <CardTitle className="text-sm font-medium text-muted-foreground">{t('metrics.totalCases')}</CardTitle>
                     <FileText className="h-4 w-4 text-indigo-500" />
                 </CardHeader>
                 <CardContent>
@@ -48,7 +57,7 @@ export default async function DashboardPage() {
             </Card>
             <Card className="shadow-sm">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium text-muted-foreground">Analyzed</CardTitle>
+                    <CardTitle className="text-sm font-medium text-muted-foreground">{t('metrics.analyzed')}</CardTitle>
                     <CheckCircle2 className="h-4 w-4 text-emerald-500" />
                 </CardHeader>
                 <CardContent>
@@ -57,7 +66,7 @@ export default async function DashboardPage() {
             </Card>
             <Card className="shadow-sm">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium text-muted-foreground">In Progress</CardTitle>
+                    <CardTitle className="text-sm font-medium text-muted-foreground">{t('metrics.inProgress')}</CardTitle>
                     <TrendingUp className="h-4 w-4 text-amber-500" />
                 </CardHeader>
                 <CardContent>
@@ -66,7 +75,7 @@ export default async function DashboardPage() {
             </Card>
             <Card className="shadow-sm">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium text-muted-foreground">Needs Review</CardTitle>
+                    <CardTitle className="text-sm font-medium text-muted-foreground">{t('metrics.needsReview')}</CardTitle>
                     <AlertCircle className="h-4 w-4 text-blue-500" />
                 </CardHeader>
                 <CardContent>
@@ -79,7 +88,7 @@ export default async function DashboardPage() {
       {/* Case List */}
       <div>
         <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            Recent Assessments
+            {t('recentAssessments')}
         </h2>
         
         {cases.length === 0 ? (
@@ -87,15 +96,15 @@ export default async function DashboardPage() {
                 <div className="bg-background p-4 rounded-full mb-4 shadow-sm">
                     <FileText className="h-8 w-8 text-muted-foreground/50" />
                 </div>
-                <h3 className="font-semibold text-lg mb-1">No cases found</h3>
-                <p className="text-muted-foreground mb-6 text-center max-w-sm">Upload your first traffic ticket to get an instant AI assessment.</p>
+                <h3 className="font-semibold text-lg mb-1">{t('noCases.title')}</h3>
+                <p className="text-muted-foreground mb-6 text-center max-w-sm">{t('noCases.description')}</p>
                 <NewCaseDialog />
             </div>
         ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {cases.map((c) => (
                     <div key={c.id} className="relative group transition-all duration-300 hover:shadow-md rounded-xl">
-                        <Link href={`/dashboard/cases/${c.id}`} className="block h-full">
+                        <Link href={`/${locale}/dashboard/cases/${c.id}`} className="block h-full">
                             <Card className="h-full border hover:border-primary/50 transition-colors bg-card/50 backdrop-blur-sm">
                                 <CardHeader>
                                     <div className="flex justify-between items-start gap-4">
@@ -104,7 +113,7 @@ export default async function DashboardPage() {
                                                 {c.title}
                                             </CardTitle>
                                             <CardDescription className="text-xs">
-                                                ID: {c.id.slice(-6)}
+                                                {t('caseCard.id')}: {c.id.slice(-6)}
                                             </CardDescription>
                                         </div>
                                         <Badge variant="outline" className={getStatusColor(c.status)}>
@@ -114,7 +123,7 @@ export default async function DashboardPage() {
                                 </CardHeader>
                                 <CardContent>
                                     <div className="flex items-center justify-between text-xs text-muted-foreground mt-4">
-                                        <span>Created {new Date(c.createdAt).toLocaleDateString()}</span>
+                                        <span>{t('caseCard.created')} {new Date(c.createdAt).toLocaleDateString()}</span>
                                     </div>
                                 </CardContent>
                             </Card>
@@ -129,7 +138,7 @@ export default async function DashboardPage() {
                                 variant="destructive" 
                                 size="icon" 
                                 className="h-8 w-8 rounded-full shadow-lg"
-                                title="Delete Case"
+                                title={t('caseCard.delete')}
                             >
                                 <Trash2 className="h-4 w-4" />
                             </Button>

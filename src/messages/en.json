@@ -1,0 +1,86 @@
+{
+  "common": {
+    "appName": "ReportAway",
+    "signIn": "Sign In",
+    "signOut": "Sign Out",
+    "getStarted": "Get Started"
+  },
+  "landing": {
+    "hero": {
+      "title": "Fight Traffic Tickets with AI",
+      "subtitle": "Upload your report, get instant analysis, and find out how to challenge it using advanced AI assessment.",
+      "cta": "Start Your Case"
+    },
+    "features": {
+      "extraction": {
+        "title": "Instant Extraction",
+        "description": "Our Vision AI reads handwritten and printed ticket details in seconds."
+      },
+      "assessment": {
+        "title": "Smart Assessment",
+        "description": "Receive a detailed breakdown of your challenge options based on traffic laws."
+      },
+      "chat": {
+        "title": "AI Case Chat",
+        "description": "Chat with an AI assistant that understands your specific case details."
+      }
+    },
+    "footer": {
+      "rights": "© 2026 ReportAway. All rights reserved.",
+      "terms": "Terms of Service",
+      "privacy": "Privacy"
+    }
+  },
+  "sidebar": {
+    "menu": "Menu",
+    "dashboard": "Dashboard",
+    "profile": "Profile",
+    "newAssessment": "New Assessment"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "subtitle": "Manage your active traffic defense assessments.",
+    "metrics": {
+      "totalCases": "Total Cases",
+      "analyzed": "Analyzed",
+      "inProgress": "In Progress",
+      "needsReview": "Needs Review"
+    },
+    "recentAssessments": "Recent Assessments",
+    "noCases": {
+      "title": "No cases found",
+      "description": "Upload your first traffic ticket to get an instant AI assessment."
+    },
+    "caseCard": {
+      "id": "ID",
+      "created": "Created",
+      "delete": "Delete Case"
+    },
+    "newCase": {
+      "button": "New Case",
+      "title": "Create New Case",
+      "description": "Start a new traffic ticket assessment case.",
+      "titleLabel": "Title",
+      "placeholder": "e.g. Speeding Ticket - Jan 20",
+      "submit": "Create Case"
+    }
+  },
+  "status": {
+    "ready": "Ready",
+    "inProgress": "Analysis In Progress",
+    "closed": "Closed",
+    "open": "Open"
+  },
+  "caseDetail": {
+    "created": "Created",
+    "files": "Files",
+    "analysis": "Analysis & Strategy",
+    "aiAssistant": "AI Assistant",
+    "chatPrompt": "Chat about your case."
+  },
+  "profile": {
+    "title": "Profile",
+    "userInfo": "User Information",
+    "manageAccount": "Manage your account details."
+  }
+}

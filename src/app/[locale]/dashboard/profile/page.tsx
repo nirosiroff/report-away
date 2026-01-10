@@ -3,18 +3,28 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from 'next/link';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 
-export default async function ProfilePage() {
+type Props = {
+  params: Promise<{ locale: string }>;
+};
+
+export default async function ProfilePage({ params }: Props) {
+    const { locale } = await params;
+    setRequestLocale(locale);
+    
     const { getUser } = getKindeServerSession();
     const user = await getUser();
+    const t = await getTranslations('profile');
+    const tCommon = await getTranslations('common');
 
     return (
         <div className="flex flex-col gap-6">
-            <h1 className="text-2xl font-bold tracking-tight">Profile</h1>
+            <h1 className="text-2xl font-bold tracking-tight">{t('title')}</h1>
             <Card>
                 <CardHeader>
-                    <CardTitle>User Information</CardTitle>
-                    <CardDescription>Manage your account details.</CardDescription>
+                    <CardTitle>{t('userInfo')}</CardTitle>
+                    <CardDescription>{t('manageAccount')}</CardDescription>
                 </CardHeader>
                 <CardContent className="flex items-center gap-4">
                     <Avatar className="h-20 w-20">
@@ -29,7 +39,7 @@ export default async function ProfilePage() {
             </Card>
             <div className="flex gap-4">
                  <Button asChild variant="outline">
-                    <Link href="/api/auth/logout">Sign Out</Link>
+                    <Link href="/api/auth/logout">{tCommon('signOut')}</Link>
                  </Button>
             </div>
         </div>
